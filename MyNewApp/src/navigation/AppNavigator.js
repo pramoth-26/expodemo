@@ -1,18 +1,20 @@
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar } from 'expo-status-bar';
+import { useTheme } from '../context/ThemeContext';
+import DrawerNavigator from './DrawerNavigator';
 
-import HomeScreen from '../screens/HomeScreen';
-import DetailScreen from '../screens/DetailScreen';
+const AppNavigator = () => {
+  const { theme } = useTheme();
 
-const Stack = createNativeStackNavigator();
-
-export default function AppNavigator() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Detail" component={DetailScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <StatusBar style={theme.dark ? 'light' : 'dark'} />
+      <NavigationContainer theme={theme}>
+        <DrawerNavigator />
+      </NavigationContainer>
+    </>
   );
-}
+};
+
+export default AppNavigator;
