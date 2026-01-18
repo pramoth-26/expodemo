@@ -10,6 +10,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { fetchProducts } from '../api/productsApi';
+import { addDoc, collection } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const LIMIT = 10;
 
@@ -21,18 +24,25 @@ const HomeScreen = ({ navigation }) => {
   const [hasMore, setHasMore] = useState(true);
 
   // Fetch products with pagination
-  const fetchProducts = async () => {
+  const loadProducts = async () => {
     if (loading || !hasMore) return;
 
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `https://dummyjson.com/products?limit=${LIMIT}&skip=${page * LIMIT}`
-      );
-      const data = await response.json();
+      const data = await fetchProducts(LIMIT, page * LIMIT);
 
-      setProducts(prev => [...prev, ...data.products]);
+      setProducts(prev => {
+        const newProducts = [...prev, ...data.products];
+
+        // If no products and this is the first load, add sample data
+        if (newProducts.length === 0 && page === 0) {
+          console.log('No products found, adding sample data...');
+          addSampleDataIfEmpty();
+        }
+
+        return newProducts;
+      });
 
       if (data.products.length < LIMIT) {
         setHasMore(false);
@@ -45,11 +55,6 @@ const HomeScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
-
-  // Load first page
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   // Render single product
   const renderItem = ({ item }) => (
@@ -67,6 +72,55 @@ const HomeScreen = ({ navigation }) => {
   const renderFooter = () => {
     if (!loading) return null;
     return <ActivityIndicator size="large" style={{ marginVertical: 20 }} />;
+  };
+
+  // Load first page
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  // Add sample data if collection is empty
+  const addSampleDataIfEmpty = async () => {
+    try {
+      const sampleProducts = [
+        {
+          id: 1,
+          title: 'iPhone 15 Pro',
+          price: 999,
+          thumbnail: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
+          description: 'Latest iPhone with advanced features'
+        },
+        {
+          id: 2,
+          title: 'MacBook Air M3',
+          price: 1099,
+          thumbnail: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400',
+          description: 'Powerful laptop for professionals'
+        },
+        {
+          id: 3,
+          title: 'AirPods Pro',
+          price: 249,
+          thumbnail: 'https://images.unsplash.com/photo-1606220945770-b5b6c2c9bf1d?w=400',
+          description: 'Wireless earbuds with noise cancellation'
+        }
+      ];
+
+      console.log('Adding sample products...');
+      for (const product of sampleProducts) {
+        await addDoc(collection(db, 'products'), product);
+        console.log(`Added product: ${product.title}`);
+      }
+      console.log('Sample products added successfully!');
+
+      // Reload products after adding
+      setProducts([]);
+      setPage(0);
+      setHasMore(true);
+      loadProducts();
+    } catch (error) {
+      console.error('Error adding sample products:', error);
+    }
   };
 
   const styles = StyleSheet.create({
@@ -126,9 +180,9 @@ const HomeScreen = ({ navigation }) => {
       </View>
       <FlatList
         data={products}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={item => item.docId}
         renderItem={renderItem}
-        onEndReached={fetchProducts}
+        onEndReached={loadProducts}
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
         showsVerticalScrollIndicator={false}
