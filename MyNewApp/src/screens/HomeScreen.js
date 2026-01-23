@@ -12,7 +12,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { useTheme, useStyles } from '../context/ThemeContext';
-import { fetchProducts } from '../api/productsApi';
+import { fetchProducts, subscribeToNewProducts } from '../api/productsApi';
+import NotificationBanner from '../components/NotificationBanner';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { designSystem } from '../styles/themeUtils';
@@ -37,6 +38,14 @@ const HomeScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   // Flag to indicate if more products are available for pagination
   const [hasMore, setHasMore] = useState(true);
+  // Notification state
+  const [notification, setNotification] = useState({
+    visible: false,
+    message: '',
+    type: 'success',
+    productTitle: '',
+    productPrice: '',
+  });
 
   // Logout function
   /**
@@ -127,6 +136,30 @@ const HomeScreen = ({ navigation }) => {
   // Load products on component mount
   useEffect(() => {
     loadProducts();
+
+    // Set up real-time listener for new products
+    const unsubscribe = subscribeToNewProducts((newProduct) => {
+      // Show in-app notification when a new product is added
+      setNotification({
+        visible: true,
+        message: '✨ New Product Added!',
+        type: 'success',
+        productTitle: newProduct.title,
+        productPrice: newProduct.price,
+      });
+
+      // Auto-add to the products list
+      setProducts(prev => {
+        const exists = prev.find(p => p.docId === newProduct.docId);
+        if (!exists) {
+          return [newProduct, ...prev];
+        }
+        return prev;
+      });
+    });
+
+    // Cleanup: unsubscribe from listener when component unmounts
+    return () => unsubscribe();
   }, []);
 
   // Reload products when category filter changes
@@ -236,6 +269,19 @@ const HomeScreen = ({ navigation }) => {
   // Main render function
   return (
     <View style={globalStyles.container}>
+      {/* In-app notification banner */}
+      {notification.visible && (
+        <NotificationBanner
+          message={notification.message}
+          type={notification.type}
+          duration={3000}
+          onDismiss={() =>
+            setNotification({ ...notification, visible: false })
+          }
+          productTitle={notification.productTitle}
+          productPrice={notification.productPrice}
+        />
+      )}
       {/* Header section with title and action buttons */}
       <View style={globalStyles.header}>
         <Text style={globalStyles.heading2}>Products</Text>
