@@ -7,84 +7,191 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
-import { useTheme, useStyles } from '../context/ThemeContext';
-import { designSystem } from '../styles/themeUtils';
-
-const { spacing } = designSystem;
 
 const SignupScreen = ({ navigation }) => {
-  const { theme } = useTheme();
-  const globalStyles = useStyles();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
+
+  /**
+   * Handle Firebase Signup
+   */
   const handleSignup = async () => {
-    if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email.trim(), password);
       Alert.alert('Success', 'Account created successfully');
     } catch (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Signup Failed', error.message);
     }
   };
 
   return (
-    <View style={globalStyles.centerContainer}>
-      <Text style={globalStyles.heading1}>Sign Up</Text>
+    <LinearGradient
+      colors={['#0E1A24', '#1A2633']}
+      style={styles.container}
+    >
+      
+        {/* Title */}
+        <Text style={styles.brand}>Create Account</Text>
+        <Text style={styles.subtitle}>
+          Join 1.5M+ NEET aspirants using NEETWise
+        </Text>
 
-      <TextInput
-        style={[globalStyles.input, { marginBottom: spacing.md, marginHorizontal: spacing.lg, width: '90%' }]}
-        placeholder="Email"
-        placeholderTextColor={theme.colors.text}
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
+        {/* Email */}
+        <Text style={styles.label}>Email ID</Text>
+        <TextInput
+          placeholder="you@example.com"
+          placeholderTextColor="#8FA1B2"
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
 
-      <TextInput
-        style={[globalStyles.input, { marginBottom: spacing.md, marginHorizontal: spacing.lg, width: '90%' }]}
-        placeholder="Password"
-        placeholderTextColor={theme.colors.text}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+        {/* Password */}
+        <Text style={styles.label}>Password</Text>
+        <View style={styles.passwordBox}>
+          <TextInput
+            placeholder="Create a strong password"
+            placeholderTextColor="#8FA1B2"
+            secureTextEntry={!showPassword}
+            style={styles.passwordInput}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              size={18}
+              color="#8FA1B2"
+            />
+          </TouchableOpacity>
+        </View>
 
-      <TextInput
-        style={[globalStyles.input, { marginBottom: spacing.md, marginHorizontal: spacing.lg, width: '90%' }]}
-        placeholder="Confirm Password"
-        placeholderTextColor={theme.colors.text}
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
+        {/* Sign Up */}
+        <TouchableOpacity activeOpacity={0.8} onPress={handleSignup}>
+          <LinearGradient
+            colors={['#FF8A00', '#FF5F00']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.signUpBtn}
+          >
+            <Text style={styles.signUpText}>Sign Up</Text>
+          </LinearGradient>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[globalStyles.primaryButton, { width: '90%', marginHorizontal: spacing.lg, marginBottom: spacing.lg }]}
-        onPress={handleSignup}
-      >
-        <Text style={globalStyles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={globalStyles.link}>Already have an account? Login</Text>
-      </TouchableOpacity>
-    </View>
+        {/* Already have account */}
+        <TouchableOpacity
+          style={styles.loginLink}
+          onPress={() => navigation.navigate('Login')}
+        >
+          <Text style={styles.loginText}>
+            Already have an account?{' '}
+            <Text style={styles.loginHighlight}>Sign In</Text>
+          </Text>
+        </TouchableOpacity>
+      
+    </LinearGradient>
   );
 };
 
 export default SignupScreen;
+
+/* ================== STYLES ================== */
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0E1A24',
+    justifyContent: 'center',
+    padding: 16,
+  },
+
+  card: {
+    backgroundColor: '#1E2C39',
+    borderRadius: 26,
+    padding: 24,
+  },
+
+  brand: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+
+  subtitle: {
+    color: '#8FA1B2',
+    fontSize: 13,
+    marginBottom: 28,
+  },
+
+  label: {
+    color: '#8FA1B2',
+    fontSize: 12,
+    marginBottom: 6,
+  },
+
+  input: {
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: '#2B3A48',
+    paddingHorizontal: 14,
+    color: '#fff',
+    marginBottom: 18,
+  },
+
+  passwordBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: '#2B3A48',
+    paddingHorizontal: 14,
+    marginBottom: 24,
+  },
+
+  passwordInput: {
+    flex: 1,
+    color: '#fff',
+  },
+
+  signUpBtn: {
+    height: 50,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+
+  signUpText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+
+  loginLink: {
+    alignItems: 'center',
+  },
+
+  loginText: {
+    color: '#8FA1B2',
+    fontSize: 13,
+  },
+
+  loginHighlight: {
+    color: '#FF8A00',
+    fontWeight: '700',
+  },
+});

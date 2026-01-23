@@ -13,6 +13,10 @@ const firebaseConfig = {
   appId: "1:196881963121:web:63e35fd05ba2addb1663d0"
 };
 
+// Google Sign-In Configuration
+export const GOOGLE_SIGN_IN_KEY = '196881963121-oismb6gnhsmtdquvj0dsq3djomlf17l7.apps.googleusercontent.com';
+
+
 // Initialize Firebase app
 const app = initializeApp(firebaseConfig);
 
